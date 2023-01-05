@@ -14,7 +14,7 @@ tcpSerSock = socket(AF_INET, SOCK_STREAM)
 # bind it the TCP port 5050 for communication
 tcpSerSock.bind((sys.argv[1], 5050))
 # indicates the acceptance of client connection for 10 requests
-tcpSerSock.listen(10)
+tcpSerSock.listen(80)
 # Fill in end.
 while 1:
     # Start receiving data from the client
@@ -22,19 +22,22 @@ while 1:
     tcpCliSock, addr = tcpSerSock.accept()
     print("Received a connection from:", addr)
     message = tcpCliSock.recv(1024)
-    #############################
-    url_Filter_file = open("urlfilter.txt", "r")
-    url_Blocked_file = url_Filter_file.readlines()
-    url_Filter_file.close()
-    ############################
+    #-----------------------------------------------------------------------------------------------------------------#
+    
+    Hidden_Filter_file = open("HiddenFilter.txt", "r")
+    Hidden_Blocked_file = url_Filter_file.readlines()
+    Hidden_Filter_file.close()
+    
+    #-----------------------------------------------------------------------------------------------------------------#
+    
     if message:
         # check message
-        print('----- message -----\n', message)
+        print('----- Message -----\n', message)
         filename = message.split()[1].decode("utf-8").rpartition("/")[2]
         # Extract the filename from the given message
         if not (message.split()[1].decode("utf-8") in url_Blocked_file):
 
-            print('----- filename -----\n', filename)
+            print('----- FileName -----\n', filename)
             fileExist = "false"
 
             filetouse = "\\cache\\" + filename
@@ -55,12 +58,12 @@ while 1:
                     tcpCliSock.send(line)
                 f.close()
 
-            # Error handling for file not found in cache
+            # HANDLING ERROR 
             except IOError:
                 try:
                     if fileExist == "false":
                         # Create a socket on the proxyserver
-                        print('--------------\nfile not found\n--------------')
+                        print('NOT FOUND')
 
                         c = socket(AF_INET, SOCK_STREAM)  # Fill in start. # Fill in end.
                         hostn = message.split()[4].decode("utf-8")
@@ -70,19 +73,19 @@ while 1:
                         # Create a temporary file on this socket and ask port 80 for the file requested by the client
                         fileobjwrite = c.makefile("w", None)
                         # request
-                        print('#######################\ncaching....\n###################')
+                        print('****CACHING DONE****')
                         fileobjwrite.write(
                             "GET " + message.split()[1].decode("utf-8") + " HTTP/1.0\n\n"
                         )
                         fileobjwrite.close()
-                        print('#######################\ncaching complete\n###################')
+                        print('<->-<->CACHING DONE<->-<->')
                         # Read the response into buffer
                         # read response
                         fileobj = c.makefile("rb", None)
                         buff = fileobj.readlines()
                         # Create a new file in the cache for the requested file.
                         # Also send the response in the buffer to client socket and the corresponding file in the cache
-                        print('#######################\nsending response from cache\n###################')
+                        print('--- CACHE RESPONSE ---')
                         File = open("./cache/" + filename, "wb+")
                         for line in buff:
                             File.write(line)
@@ -90,16 +93,15 @@ while 1:
                         File.close()
                         c.close()
                 except:
-                    print("Illegal")
+                    print("Unauthorized")
         else:
-            print("\n\n\n\nconnection blocked\n\n\n\n\n")
+            print("FORBIDDEN CONNECTION --> BLOCKED\n")
             tcpCliSock.close()
 
-else:
-    ...
+else: 
     # HTTP response message when the file not found
     tcpCliSock.send("HTTP/1.0 404 sendError\r\n")
     tcpCliSock.send("Content-Type:text/html\r\n")
-    # Close the client and the server sockets
+    # Close<--->server 
     tcpCliSock.close()
-    print("socket closed")
+    print("SOCKET CLOSED")
